@@ -1,0 +1,246 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>Download</title>
+<style>
+  html, body {
+    margin: 0;
+    height: 100%;
+    background: #161414;
+    overflow: hidden;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
+  }
+  body {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 14px;
+    box-sizing: border-box;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 14px;
+  }
+  .pill-group {
+    display: flex;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.06);
+    border-radius: 999px;
+    padding: 3px;
+  }
+  .pill-group button {
+    appearance: none;
+    border: none;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.5);
+    font: inherit;
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    padding: 5px 14px;
+    border-radius: 999px;
+    cursor: pointer;
+  }
+  .pill-group button:hover { color: rgba(255, 255, 255, 0.85); }
+  .pill-group button.active { background: #ff0000; color: #fff; }
+  .pill-group button.active:hover { color: #fff; }
+
+  .dl-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.4);
+  }
+  .dl-row { display: flex; }
+  .dl-row .pill-group { width: 100%; justify-content: space-between; }
+  .dl-row .pill-group button { flex: 1; }
+  #dl-audio-toggle-row .pill-group { width: auto; }
+  #dl-audio-toggle-row .pill-group button { flex: none; }
+  #dl-start {
+    appearance: none;
+    border: none;
+    background: #ff0000;
+    color: #fff;
+    font: inherit;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    padding: 9px;
+    border-radius: 10px;
+    cursor: pointer;
+  }
+  #dl-start:disabled { opacity: 0.5; cursor: default; }
+  #dl-status {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.55);
+    min-height: 14px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  #dl-status.error { color: #ff5c5c; }
+  #dl-progress-track {
+    height: 4px;
+    border-radius: 2px;
+    background: rgba(255, 255, 255, 0.08);
+    overflow: hidden;
+    display: none;
+  }
+  #dl-progress-track.visible { display: block; }
+  #dl-progress-bar {
+    height: 100%;
+    width: 0%;
+    background: #ff0000;
+  }
+  #dl-folder-link {
+    background: none;
+    border: none;
+    color: #ff5c5c;
+    font: inherit;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    cursor: pointer;
+    padding: 0;
+    display: none;
+    text-align: left;
+  }
+  #dl-folder-link.visible { display: block; }
+</style>
+</head>
+<body>
+  <div>
+    <div class="dl-label">Quality</div>
+    <div class="dl-row" style="margin-top: 6px;">
+      <div class="pill-group" id="dl-quality">
+        <button data-q="best" class="active">Best</button>
+        <button data-q="1080p">1080p</button>
+        <button data-q="720p">720p</button>
+        <button data-q="480p">480p</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="dl-row" id="dl-audio-toggle-row">
+    <div class="pill-group">
+      <button id="dl-audio-only">Audio Only</button>
+    </div>
+  </div>
+
+  <div id="dl-audio-format-wrap" style="display: none;">
+    <div class="dl-label">Format</div>
+    <div class="dl-row" style="margin-top: 6px;">
+      <div class="pill-group" id="dl-format">
+        <button data-f="mp3" class="active">MP3</button>
+        <button data-f="m4a">M4A</button>
+        <button data-f="opus">Opus</button>
+      </div>
+    </div>
+  </div>
+
+  <button id="dl-start">Download</button>
+  <div id="dl-progress-track"><div id="dl-progress-bar"></div></div>
+  <div id="dl-status"></div>
+  <button id="dl-folder-link">Show in Finder</button>
+
+  <script>
+    const qualityGroup = document.getElementById('dl-quality')
+    const formatGroup = document.getElementById('dl-format')
+    const audioOnlyBtn = document.getElementById('dl-audio-only')
+    const audioFormatWrap = document.getElementById('dl-audio-format-wrap')
+    const startBtn = document.getElementById('dl-start')
+    const statusEl = document.getElementById('dl-status')
+    const progressTrack = document.getElementById('dl-progress-track')
+    const progressBar = document.getElementById('dl-progress-bar')
+    const folderLink = document.getElementById('dl-folder-link')
+
+    let audioOnly = false
+
+    function selectedQuality() {
+      return qualityGroup.querySelector('button.active')?.dataset.q || 'best'
+    }
+    function selectedFormat() {
+      return formatGroup.querySelector('button.active')?.dataset.f || 'mp3'
+    }
+
+    qualityGroup.querySelectorAll('button').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        qualityGroup.querySelectorAll('button').forEach((b) => b.classList.remove('active'))
+        btn.classList.add('active')
+      })
+    })
+    formatGroup.querySelectorAll('button').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        formatGroup.querySelectorAll('button').forEach((b) => b.classList.remove('active'))
+        btn.classList.add('active')
+      })
+    })
+
+    audioOnlyBtn.addEventListener('click', () => {
+      audioOnly = !audioOnly
+      audioOnlyBtn.classList.toggle('active', audioOnly)
+      audioFormatWrap.style.display = audioOnly ? 'block' : 'none'
+      qualityGroup.parentElement.parentElement.style.display = audioOnly ? 'none' : 'block'
+    })
+
+    let currentUrl = window.youtobaDownload.getUrl()
+    if (!currentUrl) {
+      statusEl.textContent = 'Open a video first'
+      statusEl.classList.add('error')
+      startBtn.disabled = true
+    }
+
+    startBtn.addEventListener('click', async () => {
+      if (!currentUrl) return
+      startBtn.disabled = true
+      startBtn.textContent = 'Downloading…'
+      statusEl.textContent = 'Starting…'
+      statusEl.classList.remove('error')
+      progressTrack.classList.add('visible')
+      folderLink.classList.remove('visible')
+
+      const result = await window.youtobaDownload.start({
+        url: currentUrl,
+        quality: selectedQuality(),
+        audioOnly,
+        audioFormat: selectedFormat()
+      })
+
+      if (!result.ok) {
+        statusEl.textContent = result.error || 'Download failed'
+        statusEl.classList.add('error')
+        startBtn.disabled = false
+        startBtn.textContent = 'Download'
+      }
+    })
+
+    window.youtobaDownload.onStatus((text) => {
+      statusEl.textContent = text
+    })
+
+    window.youtobaDownload.onProgress((progress) => {
+      if (typeof progress.percent === 'number') {
+        progressBar.style.width = `${progress.percent}%`
+      }
+      statusEl.textContent = [
+        progress.percent != null ? `${progress.percent}%` : null,
+        progress.currentSpeed,
+        progress.eta ? `ETA ${progress.eta}` : null
+      ].filter(Boolean).join(' · ')
+    })
+
+    window.youtobaDownload.onComplete(() => {
+      startBtn.disabled = false
+      startBtn.textContent = 'Download'
+      statusEl.textContent = 'Done'
+      progressBar.style.width = '100%'
+      folderLink.classList.add('visible')
+    })
+
+    folderLink.addEventListener('click', () => window.youtobaDownload.showDownloadsFolder())
+  </script>
+</body>
+</html>

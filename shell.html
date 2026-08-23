@@ -1,0 +1,210 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>YouTOBA</title>
+<style>
+  html, body {
+    margin: 0;
+    height: 100%;
+    background: #0e0d0d;
+    overflow: hidden;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
+  }
+  #titlebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding-left: 80px;
+    padding-right: 14px;
+    box-sizing: border-box;
+    background: #0e0d0d;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    -webkit-app-region: drag;
+    z-index: 2;
+  }
+  #brand {
+    font-size: 11.5px;
+    font-weight: 700;
+    letter-spacing: 0.11em;
+    text-transform: uppercase;
+    color: rgba(255, 62, 62, 0.65);
+    user-select: none;
+    white-space: nowrap;
+  }
+  #nav-controls {
+    display: flex;
+    align-items: center;
+    gap: 1px;
+    -webkit-app-region: no-drag;
+  }
+  #nav-controls .sep {
+    width: 1px;
+    height: 16px;
+    background: rgba(255, 255, 255, 0.1);
+    margin: 0 6px;
+  }
+  #nav-controls button {
+    appearance: none;
+    border: none;
+    background: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border-radius: 7px;
+    cursor: pointer;
+    color: rgba(255, 255, 255, 0.5);
+    transition: background-color 0.15s ease, color 0.15s ease, transform 0.1s ease;
+  }
+  #nav-controls button svg {
+    width: 16px;
+    height: 16px;
+    display: block;
+  }
+  #nav-controls button:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.09);
+    color: #fff;
+  }
+  #nav-controls button:active:not(:disabled) {
+    transform: scale(0.88);
+    background: rgba(255, 255, 255, 0.14);
+  }
+  #nav-controls button:disabled {
+    color: rgba(255, 255, 255, 0.16);
+    cursor: default;
+  }
+  #download-btn {
+    margin-left: auto;
+    -webkit-app-region: no-drag;
+    appearance: none;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    background: transparent;
+    color: rgba(255, 255, 255, 0.6);
+    font: inherit;
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    padding: 5px 13px;
+    border-radius: 999px;
+    cursor: pointer;
+  }
+  #download-btn:hover {
+    color: #fff;
+    border-color: rgba(255, 255, 255, 0.3);
+  }
+
+  .pill-group {
+    display: flex;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.06);
+    border-radius: 999px;
+    padding: 3px;
+    -webkit-app-region: no-drag;
+  }
+  .pill-group button {
+    appearance: none;
+    border: none;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.5);
+    font: inherit;
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    padding: 5px 14px;
+    border-radius: 999px;
+    cursor: pointer;
+  }
+  .pill-group button:hover { color: rgba(255, 255, 255, 0.85); }
+  .pill-group button.active { background: #ff0000; color: #fff; }
+  .pill-group button.active:hover { color: #fff; }
+
+</style>
+</head>
+<body>
+  <div id="titlebar">
+    <div id="brand">YouTOBA</div>
+    <div id="nav-controls">
+      <button id="nav-home" title="Home">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 11.5L12 4l9 7.5" />
+          <path d="M5.5 10v9a1 1 0 0 0 1 1h11a1 1 0 0 0 1-1v-9" />
+          <path d="M9.5 20v-6h5v6" />
+        </svg>
+      </button>
+      <div class="sep"></div>
+      <button id="nav-back" title="Back" disabled>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M15 5l-7 7 7 7" />
+        </svg>
+      </button>
+      <button id="nav-forward" title="Forward" disabled>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 5l7 7-7 7" />
+        </svg>
+      </button>
+      <button id="nav-reload" title="Reload">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20 11A8 8 0 1 0 19 15" />
+          <path d="M20 4v7h-7" />
+        </svg>
+      </button>
+    </div>
+    <button id="download-btn">Download</button>
+    <div class="pill-group" id="view-toggle">
+      <button id="btn-desktop" class="active">Desktop</button>
+      <button id="btn-tv">TV</button>
+    </div>
+  </div>
+
+  <script>
+    const desktopBtn = document.getElementById('btn-desktop')
+    const tvBtn = document.getElementById('btn-tv')
+    const navControls = document.getElementById('nav-controls')
+
+    function selectView(view) {
+      desktopBtn.classList.toggle('active', view === 'desktop')
+      tvBtn.classList.toggle('active', view === 'tv')
+      navControls.style.visibility = view === 'desktop' ? 'visible' : 'hidden'
+      window.youtoba.setView(view)
+    }
+
+    desktopBtn.addEventListener('click', () => selectView('desktop'))
+    tvBtn.addEventListener('click', () => selectView('tv'))
+
+    // --- Desktop nav controls (home/back/forward/reload) ---
+    const navHomeBtn = document.getElementById('nav-home')
+    const navBackBtn = document.getElementById('nav-back')
+    const navForwardBtn = document.getElementById('nav-forward')
+    const navReloadBtn = document.getElementById('nav-reload')
+
+    navHomeBtn.addEventListener('click', () => window.youtoba.navHome())
+    navBackBtn.addEventListener('click', () => window.youtoba.navBack())
+    navForwardBtn.addEventListener('click', () => window.youtoba.navForward())
+    navReloadBtn.addEventListener('click', () => window.youtoba.navReload())
+
+    window.youtoba.onNavState(({ canGoBack, canGoForward }) => {
+      navBackBtn.disabled = !canGoBack
+      navForwardBtn.disabled = !canGoForward
+    })
+
+    // --- Download popup ---
+    // A same-page overlay here would render *behind* the desktop/TV
+    // WebContentsView layers (they're separately composited on top of
+    // everything below the titlebar), making it invisible to a real click
+    // even though its own click handlers would still fire. A genuine
+    // floating window sidesteps that entirely.
+    const downloadBtn = document.getElementById('download-btn')
+    downloadBtn.addEventListener('click', () => window.youtoba.toggleDownloadPopup())
+  </script>
+</body>
+</html>
