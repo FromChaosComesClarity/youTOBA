@@ -6,6 +6,9 @@ source rather than skipped after they start, and a built-in downloader.
 
 Personal-use project — not affiliated with YouTube or Google.
 
+> **A note on the name:** "toba" is Brazilian Portuguese slang for
+> butthole. This was, allegedly, on purpose.
+
 ## Features
 
 - **Desktop / TV toggle** — flip between `youtube.com` and the TV/Leanback
