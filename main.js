@@ -87,6 +87,7 @@ let tvView = null
 let activeView = 'desktop'
 let downloadPopup = null
 let htmlFullscreen = false
+let adBlockingReady = Promise.resolve()
 
 const YTDLP_PATH = path.join(app.getPath('userData'), 'yt-dlp')
 let ytDlp = null
@@ -299,14 +300,20 @@ function createWindow() {
 function createViews() {
   desktopView = createContentView()
   desktopView.webContents.setUserAgent(DESKTOP_UA)
-  desktopView.webContents.loadURL(DESKTOP_URL)
 
   tvView = createContentView({ isTv: true })
   tvView.webContents.setUserAgent(TV_UA)
-  tvView.webContents.loadURL(TV_URL, { userAgent: TV_CLIENT_UA })
 
   mainWindow.contentView.addChildView(desktopView)
   mainWindow.contentView.addChildView(tvView)
+
+  // Hold only the first navigation until the blocker is attached (or has
+  // given up — see startAdBlocking), so the very first page load is covered
+  // too. The window and its chrome are already on screen by then.
+  adBlockingReady.then(() => {
+    desktopView.webContents.loadURL(DESKTOP_URL)
+    tvView.webContents.loadURL(TV_URL, { userAgent: TV_CLIENT_UA })
+  })
 
   desktopView.webContents.focus()
 
@@ -639,6 +646,22 @@ function importLoginMenuItem(label, browserId) {
   }
 }
 
+// The filter lists are fetched over the network, and the whole startup path
+// used to sit behind that await: on a slow connection — or with a firewall
+// prompt left unanswered — the app came up with a menu bar and no window at
+// all, which reads as "it didn't launch". Fetch them alongside the UI
+// instead, and give up waiting after a few seconds; the lists still attach
+// whenever they do arrive, they just stop holding the first page load.
+const AD_LIST_WAIT_MS = 4000
+
+function startAdBlocking(ses) {
+  const attached = ElectronBlocker.fromLists(fetch, adsAndTrackingLists, { loadCosmeticFilters: false })
+    .then((blocker) => blocker.enableBlockingInSession(ses))
+    .catch((err) => console.error('Ad filter lists failed to load:', err))
+
+  return Promise.race([attached, new Promise((resolve) => setTimeout(resolve, AD_LIST_WAIT_MS))])
+}
+
 app.whenReady().then(async () => {
   nativeTheme.themeSource = 'dark'
 
@@ -664,8 +687,7 @@ app.whenReady().then(async () => {
   // entirely in the main process via session.webRequest and never touches
   // the page's JS, so it's unaffected — this just skips the cosmetic-filter
   // preload injection that was crashing things.
-  const blocker = await ElectronBlocker.fromLists(fetch, adsAndTrackingLists, { loadCosmeticFilters: false })
-  blocker.enableBlockingInSession(ses)
+  adBlockingReady = startAdBlocking(ses)
 
   app.setAboutPanelOptions({
     applicationName: 'YourTOBA',
