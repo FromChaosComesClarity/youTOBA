@@ -16,13 +16,51 @@ const { ElectronBlocker } = require('@ghostery/adblocker-electron')
 const { adsAndTrackingLists } = require('@ghostery/adblocker')
 const YTDlpWrap = require('yt-dlp-wrap').default
 
-app.setName('YouTOBA')
+app.setName('YourTOBA')
 
 const DESKTOP_URL = 'https://www.youtube.com'
 const TV_URL = 'https://www.youtube.com/tv'
 const BG = '#0e0d0d'
 const TITLEBAR_HEIGHT = 40
-const PARTITION = 'persist:youtoba'
+// Renamed from YouTOBA, so the session that predates the rename lives under
+// the old name — see migrateLegacyUserData below.
+const PARTITION = migrateLegacyUserData()
+
+// A userData directory is named after the app (~/Library/Application Support/
+// <name>), so the rename would have silently orphaned everything personal in
+// there: the persisted YouTube session, imported login cookies, the
+// downloaded yt-dlp binary. To the user that looks like a freshly installed
+// app that forgot who they are. Move the old directory into place on first
+// run instead, and rename the partition folder inside it so the persist:
+// name matches what's on disk. If either move can't happen, keep using the
+// old partition name rather than dropping them into a signed-out session.
+function migrateLegacyUserData() {
+  const userData = app.getPath('userData')
+  const legacyUserData = path.join(path.dirname(userData), 'YouTOBA')
+  const partitionDir = (name) => path.join(userData, 'Partitions', name)
+
+  if (fs.existsSync(legacyUserData) && legacyUserData !== userData) {
+    try {
+      // Nothing has created userData this early in startup, but an earlier
+      // run of a renamed build could have left an empty one behind; rmdirSync
+      // throws on a non-empty directory, which is the signal to leave both
+      // alone and keep whatever the new directory already holds.
+      if (fs.existsSync(userData)) fs.rmdirSync(userData)
+      fs.renameSync(legacyUserData, userData)
+    } catch {
+      // Already migrated, or the old directory is in use / not ours to move.
+    }
+  }
+
+  if (fs.existsSync(partitionDir('youtoba')) && !fs.existsSync(partitionDir('yourtoba'))) {
+    try {
+      fs.renameSync(partitionDir('youtoba'), partitionDir('yourtoba'))
+    } catch {
+      return 'persist:youtoba'
+    }
+  }
+  return 'persist:yourtoba'
+}
 
 // A plain, current desktop Chrome UA — Electron's own UA string trips
 // "unsupported browser" checks on Google properties, same fix WhatsTheFuck
@@ -40,14 +78,15 @@ const DESKTOP_UA = `Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/
 // one for every request after, per VacuumTube's own hard-won comment: an
 // up-to-date Cobalt version on every request triggers playback issues, but
 // works fine for the one-time initial handshake.
-const TV_CLIENT_UA = `Mozilla/5.0 (PS4; Leanback Shell) Cobalt/19.lts.0-qa; compatible; YouTOBA/${app.getVersion()}`
-const TV_UA = `Mozilla/5.0 (PS4; Leanback Shell) Cobalt/25.lts.40.1035033; compatible; YouTOBA/${app.getVersion()}`
+const TV_CLIENT_UA = `Mozilla/5.0 (PS4; Leanback Shell) Cobalt/19.lts.0-qa; compatible; YourTOBA/${app.getVersion()}`
+const TV_UA = `Mozilla/5.0 (PS4; Leanback Shell) Cobalt/25.lts.40.1035033; compatible; YourTOBA/${app.getVersion()}`
 
 let mainWindow = null
 let desktopView = null
 let tvView = null
 let activeView = 'desktop'
 let downloadPopup = null
+let htmlFullscreen = false
 
 const YTDLP_PATH = path.join(app.getPath('userData'), 'yt-dlp')
 let ytDlp = null
@@ -117,7 +156,7 @@ function hasFfmpeg() {
 // decryption ourselves.
 async function importCookiesFromBrowser(browser) {
   const dlp = await ensureYtDlp()
-  const tmpFile = path.join(app.getPath('temp'), `youtoba-cookies-${Date.now()}.txt`)
+  const tmpFile = path.join(app.getPath('temp'), `yourtoba-cookies-${Date.now()}.txt`)
 
   let runError = null
   try {
@@ -234,6 +273,22 @@ function createWindow() {
   createViews()
 
   mainWindow.on('resize', layoutViews)
+
+  // Leaving native fullscreen from the window side — Cmd+Ctrl+F, View →
+  // Toggle Full Screen, the green traffic light — tells the page nothing: it
+  // stays in HTML fullscreen, no leave-html-full-screen ever arrives, and
+  // the view would sit over the titlebar for good with the player still
+  // drawing its fullscreen chrome inside a small window. Push the page out
+  // of fullscreen ourselves, and restore the layout whether or not it obeys.
+  mainWindow.on('leave-full-screen', () => {
+    if (!htmlFullscreen) return
+    const active = activeView === 'tv' ? tvView : desktopView
+    active?.webContents
+      .executeJavaScript('document.exitFullscreen && document.exitFullscreen()')
+      .catch(() => {})
+    setHtmlFullscreen(false)
+  })
+
   mainWindow.on('focus', () => {
     const active = activeView === 'tv' ? tvView : desktopView
     active?.webContents.focus()
@@ -297,7 +352,7 @@ function createContentView({ isTv } = {}) {
       preload: path.join(__dirname, 'preload.js'),
       // Lets preload.js tell the TV view apart from the desktop one (both
       // load the same preload script) so gamepad polling only runs there.
-      additionalArguments: isTv ? ['--youtoba-tv'] : []
+      additionalArguments: isTv ? ['--yourtoba-tv'] : []
     }
   })
   view.setBackgroundColor(BG)
@@ -317,6 +372,9 @@ function createContentView({ isTv } = {}) {
     }
     return { action: 'deny' }
   })
+
+  view.webContents.on('enter-html-full-screen', () => setHtmlFullscreen(true))
+  view.webContents.on('leave-html-full-screen', () => setHtmlFullscreen(false))
 
   view.webContents.on('context-menu', () => {
     const videoId = extractVideoId(view.webContents.getURL())
@@ -391,11 +449,26 @@ function toggleDownloadPopup() {
 function layoutViews() {
   if (!mainWindow) return
   const [width, height] = mainWindow.getContentSize()
-  const full = { x: 0, y: TITLEBAR_HEIGHT, width, height: Math.max(0, height - TITLEBAR_HEIGHT) }
+  // In HTML fullscreen the view takes the whole window, titlebar strip
+  // included — see setHtmlFullscreen below.
+  const top = htmlFullscreen ? 0 : TITLEBAR_HEIGHT
+  const full = { x: 0, y: top, width, height: Math.max(0, height - top) }
   const collapsed = { x: 0, y: 0, width: 0, height: 0 }
 
   if (desktopView) desktopView.setBounds(activeView === 'desktop' ? full : collapsed)
   if (tvView) tvView.setBounds(activeView === 'tv' ? full : collapsed)
+}
+
+// Electron does put the window itself into native fullscreen when a page
+// asks for HTML fullscreen, but nothing moves the WebContentsView: it stays
+// parked below the titlebar, so a "fullscreen" video came up TITLEBAR_HEIGHT
+// short with our own chrome still drawn across the top of the screen. Hand
+// the view the entire window for as long as the page holds fullscreen, and
+// give the titlebar its strip back on the way out.
+function setHtmlFullscreen(on) {
+  if (htmlFullscreen === on) return
+  htmlFullscreen = on
+  layoutViews()
 }
 
 function setActiveView(view) {
@@ -494,7 +567,7 @@ function createMenu() {
         { role: 'hideOthers' },
         { role: 'unhide' },
         { type: 'separator' },
-        { label: 'Quit YouTOBA', accelerator: 'Cmd+Q', click: () => app.quit() }
+        { label: 'Quit YourTOBA', accelerator: 'Cmd+Q', click: () => app.quit() }
       ]
     },
     {
@@ -571,7 +644,13 @@ app.whenReady().then(async () => {
 
   const ses = session.fromPartition(PARTITION)
   ses.setPermissionRequestHandler((_webContents, permission, callback) => {
-    callback(permission === 'notifications')
+    // Chromium routes an HTML fullscreen request (what YouTube's fullscreen
+    // button calls) through this same handler, so the blanket deny here was
+    // exactly why that button did nothing: requestFullscreen() was rejected
+    // before it ever reached the window, no 'enter-html-full-screen', no
+    // fullscreenchange event, nothing for the player to react to. Everything
+    // still not on this list stays denied.
+    callback(permission === 'notifications' || permission === 'fullscreen')
   })
 
   // fromPrebuiltAdsAndTracking() enables cosmetic filtering by default,
@@ -589,7 +668,7 @@ app.whenReady().then(async () => {
   blocker.enableBlockingInSession(ses)
 
   app.setAboutPanelOptions({
-    applicationName: 'YouTOBA',
+    applicationName: 'YourTOBA',
     applicationVersion: app.getVersion(),
     credits: 'A small, beautiful native shell around YouTube — Desktop/TV toggle, ads stripped at the source.'
   })

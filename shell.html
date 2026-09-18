@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="utf-8" />
-<title>YouTOBA</title>
+<title>YourTOBA</title>
 <style>
   html, body {
     margin: 0;
@@ -132,7 +132,7 @@
 </head>
 <body>
   <div id="titlebar">
-    <div id="brand">YouTOBA</div>
+    <div id="brand">YourTOBA</div>
     <div id="nav-controls">
       <button id="nav-home" title="Home">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -175,7 +175,7 @@
       desktopBtn.classList.toggle('active', view === 'desktop')
       tvBtn.classList.toggle('active', view === 'tv')
       navControls.style.visibility = view === 'desktop' ? 'visible' : 'hidden'
-      window.youtoba.setView(view)
+      window.yourtoba.setView(view)
     }
 
     desktopBtn.addEventListener('click', () => selectView('desktop'))
@@ -187,12 +187,12 @@
     const navForwardBtn = document.getElementById('nav-forward')
     const navReloadBtn = document.getElementById('nav-reload')
 
-    navHomeBtn.addEventListener('click', () => window.youtoba.navHome())
-    navBackBtn.addEventListener('click', () => window.youtoba.navBack())
-    navForwardBtn.addEventListener('click', () => window.youtoba.navForward())
-    navReloadBtn.addEventListener('click', () => window.youtoba.navReload())
+    navHomeBtn.addEventListener('click', () => window.yourtoba.navHome())
+    navBackBtn.addEventListener('click', () => window.yourtoba.navBack())
+    navForwardBtn.addEventListener('click', () => window.yourtoba.navForward())
+    navReloadBtn.addEventListener('click', () => window.yourtoba.navReload())
 
-    window.youtoba.onNavState(({ canGoBack, canGoForward }) => {
+    window.yourtoba.onNavState(({ canGoBack, canGoForward }) => {
       navBackBtn.disabled = !canGoBack
       navForwardBtn.disabled = !canGoForward
     })
@@ -204,7 +204,7 @@
     // even though its own click handlers would still fire. A genuine
     // floating window sidesteps that entirely.
     const downloadBtn = document.getElementById('download-btn')
-    downloadBtn.addEventListener('click', () => window.youtoba.toggleDownloadPopup())
+    downloadBtn.addEventListener('click', () => window.yourtoba.toggleDownloadPopup())
   </script>
 </body>
 </html>

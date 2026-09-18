@@ -8,7 +8,7 @@
 // VacuumTube makes, with nodeIntegration left off so the page itself still
 // has no Node access.
 
-const IS_TV = process.argv.includes('--youtoba-tv')
+const IS_TV = process.argv.includes('--yourtoba-tv')
 const AD_OBJECT_KEYS = ['adPlacements', 'adSlots', 'playerAds', 'adBreakHeartbeatParams']
 const AD_RENDERER_KEYS = [
   'adSlotRenderer',

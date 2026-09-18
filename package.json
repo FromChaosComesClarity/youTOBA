@@ -1,7 +1,7 @@
 {
-  "name": "youtoba",
-  "productName": "YouTOBA",
-  "version": "0.1.0",
+  "name": "yourtoba",
+  "productName": "YourTOBA",
+  "version": "0.2.0",
   "description": "A small, beautiful native shell around YouTube — Desktop/TV toggle, ads stripped at the source.",
   "main": "main.js",
   "private": true,
@@ -9,8 +9,8 @@
     "dev": "electron .",
     "icons": "rm -rf build/icon.iconset && swift build/make-icons.swift build/icon.iconset && cp build/icon.iconset/iconTemplate.png build/icon.iconset/iconTemplate@2x.png assets/ && rm build/icon.iconset/iconTemplate.png build/icon.iconset/iconTemplate@2x.png && iconutil -c icns build/icon.iconset -o assets/icon.icns",
     "pack": "electron-builder --mac dmg zip && npm run sign",
-    "sign": "APP=$(find dist -maxdepth 2 -type d -name 'YouTOBA.app' | head -1) && xattr -cr \"$APP\" && codesign --force --deep --sign - \"$APP\" && codesign --verify --verbose \"$APP\"",
-    "deploy": "APP=$(find dist -maxdepth 2 -type d -name 'YouTOBA.app' | head -1) && rm -rf /Applications/YouTOBA.app && cp -R \"$APP\" /Applications/ && echo 'Deployed YouTOBA.app to /Applications'"
+    "sign": "APP=$(find dist -maxdepth 2 -type d -name 'YourTOBA.app' | head -1) && xattr -cr \"$APP\" && codesign --force --deep --sign - \"$APP\" && codesign --verify --verbose \"$APP\"",
+    "deploy": "APP=$(find dist -maxdepth 2 -type d -name 'YourTOBA.app' | head -1) && rm -rf /Applications/YourTOBA.app && cp -R \"$APP\" /Applications/ && echo 'Deployed YourTOBA.app to /Applications'"
   },
   "devDependencies": {
     "electron": "^36.0.0",
@@ -22,8 +22,8 @@
     "yt-dlp-wrap": "^2.3.12"
   },
   "build": {
-    "appId": "com.youtoba.app",
-    "productName": "YouTOBA",
+    "appId": "com.yourtoba.app",
+    "productName": "YourTOBA",
     "directories": {
       "output": "dist"
     },
@@ -46,7 +46,7 @@
       ],
       "category": "public.app-category.entertainment",
       "icon": "assets/icon.icns",
-      "artifactName": "YouTOBA-${version}-${arch}.${ext}",
+      "artifactName": "YourTOBA-${version}-${arch}.${ext}",
       "darkModeSupport": true,
       "extendInfo": {
         "LSUIElement": false

@@ -186,7 +186,7 @@
       qualityGroup.parentElement.parentElement.style.display = audioOnly ? 'none' : 'block'
     })
 
-    let currentUrl = window.youtobaDownload.getUrl()
+    let currentUrl = window.yourtobaDownload.getUrl()
     if (!currentUrl) {
       statusEl.textContent = 'Open a video first'
       statusEl.classList.add('error')
@@ -202,7 +202,7 @@
       progressTrack.classList.add('visible')
       folderLink.classList.remove('visible')
 
-      const result = await window.youtobaDownload.start({
+      const result = await window.yourtobaDownload.start({
         url: currentUrl,
         quality: selectedQuality(),
         audioOnly,
@@ -217,11 +217,11 @@
       }
     })
 
-    window.youtobaDownload.onStatus((text) => {
+    window.yourtobaDownload.onStatus((text) => {
       statusEl.textContent = text
     })
 
-    window.youtobaDownload.onProgress((progress) => {
+    window.yourtobaDownload.onProgress((progress) => {
       if (typeof progress.percent === 'number') {
         progressBar.style.width = `${progress.percent}%`
       }
@@ -232,7 +232,7 @@
       ].filter(Boolean).join(' · ')
     })
 
-    window.youtobaDownload.onComplete(() => {
+    window.yourtobaDownload.onComplete(() => {
       startBtn.disabled = false
       startBtn.textContent = 'Download'
       statusEl.textContent = 'Done'
@@ -240,7 +240,7 @@
       folderLink.classList.add('visible')
     })
 
-    folderLink.addEventListener('click', () => window.youtobaDownload.showDownloadsFolder())
+    folderLink.addEventListener('click', () => window.yourtobaDownload.showDownloadsFolder())
   </script>
 </body>
 </html>

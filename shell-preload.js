@@ -1,6 +1,6 @@
 const { contextBridge, ipcRenderer } = require('electron')
 
-contextBridge.exposeInMainWorld('youtoba', {
+contextBridge.exposeInMainWorld('yourtoba', {
   setView: (view) => ipcRenderer.send('set-view', view),
   navHome: () => ipcRenderer.send('nav-home'),
   navBack: () => ipcRenderer.send('nav-back'),

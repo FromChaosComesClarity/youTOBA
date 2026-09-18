@@ -1,4 +1,4 @@
-# YouTOBA
+# YourTOBA
 
 A small, native YouTube shell for macOS: toggle between the normal desktop
 site and the TV/Leanback interface in one window, with ads stripped at the
@@ -7,7 +7,8 @@ source rather than skipped after they start, and a built-in downloader.
 Personal-use project — not affiliated with YouTube or Google.
 
 > **A note on the name:** "toba" is Brazilian Portuguese slang for
-> butthole. This was, allegedly, on purpose.
+> butthole. This was, allegedly, on purpose — and the rename from YouTOBA
+> only made it more so.
 
 ## Features
 
@@ -24,6 +25,8 @@ Personal-use project — not affiliated with YouTube or Google.
   and Audio Only (MP3/M4A/Opus) options. Backed by
   [yt-dlp](https://github.com/yt-dlp/yt-dlp) and a bundled
   [ffmpeg](https://ffmpeg.org) — no separate installs required.
+- **Real fullscreen** — the player's fullscreen button takes over the whole
+  screen, titlebar included, and gives it back on exit.
 - **Native browser-style chrome** — custom titlebar with Home/Back/Forward/
   Reload for the Desktop view, and account-cookie import (Chrome, Brave,
   Firefox, or Safari) via the **Account** menu, for when Desktop's normal
@@ -49,8 +52,17 @@ Developer account involved — on first launch, macOS will refuse to open it
 with a plain double-click. Either right-click → Open once, or:
 
 ```bash
-xattr -cr /Applications/YouTOBA.app
+xattr -cr /Applications/YourTOBA.app
 ```
+
+## Upgrading from YouTOBA
+
+The app is named YourTOBA as of this version. macOS keeps app data in a
+directory named after the app, so on first launch the old
+`~/Library/Application Support/YouTOBA` directory is moved to
+`.../YourTOBA` — the signed-in session, imported cookies and the downloaded
+`yt-dlp` binary all carry over. The old `/Applications/YouTOBA.app` is not
+touched; delete it once the new one works.
 
 ## Signing in
 
@@ -66,7 +78,7 @@ in the menu bar reads your already-logged-in session out of a real browser
 loads it into the app. Firefox needs no extra permissions; Chrome/Brave need
 a one-time macOS Keychain approval; Safari needs Full Disk Access granted to
 the bundled `yt-dlp` binary at
-`~/Library/Application Support/YouTOBA/yt-dlp` (System Settings → Privacy &
+`~/Library/Application Support/YourTOBA/yt-dlp` (System Settings → Privacy &
 Security → Full Disk Access), since its cookie store lives in a
 TCC-protected sandbox container.
 

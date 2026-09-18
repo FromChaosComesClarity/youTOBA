@@ -1,6 +1,6 @@
 const { contextBridge, ipcRenderer } = require('electron')
 
-contextBridge.exposeInMainWorld('youtobaDownload', {
+contextBridge.exposeInMainWorld('yourtobaDownload', {
   getUrl: () => new URLSearchParams(window.location.search).get('url'),
   start: (opts) => ipcRenderer.invoke('start-download', opts),
   showDownloadsFolder: () => ipcRenderer.send('show-downloads-folder'),
